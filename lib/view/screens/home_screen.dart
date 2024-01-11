@@ -2,7 +2,11 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:map_marker_flutter/model/marker_data.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +31,120 @@ class _HomeScreenState extends State<HomeScreen> {
   String _lat = "37.42796133580664", _long = "-122.085749655962";
   TextEditingController _labelController = TextEditingController();
   List<Marker> _markers = [];
+
+  bool delete = false;
+  @override
+  @override
+  void initState() {
+    // TODO: implement initState
+
+    // getMarkers(context as BuildContext);
+    super.initState();
+    getMarkers();
+  }
+
+  void getMarkers() async {
+    final database = openDatabase(
+      join(await getDatabasesPath(), 'marker_database.db'),
+      onCreate: (db, version) {
+        // Run the CREATE TABLE statement on the database.
+        return db.execute(
+          'CREATE TABLE MarkerData(markerId TEXT PRIMARY KEY, latitude TEXT,longitude TEXT,labelName TEXT)',
+        );
+      },
+      version: 1,
+    );
+    final db = await database;
+
+    final List<Map<String, dynamic>> maps = await db.query('MarkerData');
+    List<MarkerData> m = List.generate(maps.length, (index) {
+      return MarkerData(
+          markerId: maps[index]['markerId'],
+          latitude: maps[index]['latitude'],
+          longitude: maps[index]['longitude'],
+          labelName: maps[index]['labelName']);
+    });
+
+    List<Marker> temp = [];
+    for (int i = 0; i < m.length; i++) {
+      MarkerData _markerData = m[i];
+      print(_markerData.labelName);
+      temp.add(
+        Marker(
+          infoWindow: InfoWindow(
+            title: _labelController.text,
+            snippet: _markerData.latitude + "," + _markerData.longitude,
+          ),
+          markerId: MarkerId(_markerData.markerId),
+          position: LatLng(double.parse(_markerData.latitude),
+              double.parse(_markerData.longitude)),
+          onTap: () {
+            print(delete);
+            if (delete) {
+              print('delete');
+
+              setState(() {
+                _markers.removeWhere((element) =>
+                    element.markerId == MarkerId(_markerData.markerId));
+                deleteDataFromDB(_markerData.markerId);
+              });
+            }
+            print('tapped');
+          },
+        ),
+      );
+    }
+    setState(() {
+      _markers = temp;
+    });
+  }
+
+  Future<void> insertMarkerToDB(MarkerData markerData) async {
+    final database = openDatabase(
+      join(await getDatabasesPath(), 'marker_database.db'),
+      onCreate: (db, version) {
+        // Run the CREATE TABLE statement on the database.
+        return db.execute(
+          'CREATE TABLE MarkerData(markerId TEXT PRIMARY KEY, latitude TEXT,longitude TEXT,labelName TEXT)',
+        );
+      },
+      version: 1,
+    );
+    final db = await database;
+
+    await db.insert('MarkerData', markerData.toMap());
+  }
+
+  void addData(String markerId, String latitude, String longitude,
+      String labelName) async {
+    var data = MarkerData(
+        markerId: markerId,
+        latitude: latitude,
+        longitude: longitude,
+        labelName: labelName);
+    await insertMarkerToDB(data);
+  }
+
+  Future<void> deleteDataFromDB(String markerId) async {
+    final database = openDatabase(
+      join(await getDatabasesPath(), 'marker_database.db'),
+      onCreate: (db, version) {
+        // Run the CREATE TABLE statement on the database.
+        return db.execute(
+          'CREATE TABLE MarkerData(markerId TEXT PRIMARY KEY, latitude TEXT,longitude TEXT,labelName TEXT)',
+        );
+      },
+      version: 1,
+    );
+    final db = await database;
+    await db.delete(
+      'MarkerData',
+      where: 'markerId = ?',
+      // Pass the Dog's id as a whereArg to prevent SQL injection.
+      whereArgs: [markerId],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,71 +191,38 @@ class _HomeScreenState extends State<HomeScreen> {
                                   setState(() {
                                     _markers.add(
                                       Marker(
+                                        infoWindow: InfoWindow(
+                                          title: _labelController.text,
+                                          snippet:
+                                              argument.latitude.toString() +
+                                                  "," +
+                                                  argument.longitude.toString(),
+                                        ),
                                         markerId: MarkerId(argument.toString()),
                                         position: argument,
                                         onTap: () {
-                                          setState(() {
-                                            print('trigger 2');
-                                            showDialog(
-                                                context: context,
-                                                builder: (context) =>
-                                                    AlertDialog(
-                                                      title: Text(
-                                                          _labelController
-                                                              .text),
-                                                      content: Container(
-                                                        height: 100,
-                                                        child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Text("Latitude: " +
-                                                                  argument
-                                                                      .latitude
-                                                                      .toString()),
-                                                              Text("Longitude: " +
-                                                                  argument
-                                                                      .longitude
-                                                                      .toString())
-                                                            ]),
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                            onPressed: () {
-                                                              setState(() {
-                                                                _markers.removeWhere((element) =>
-                                                                    element
-                                                                        .markerId ==
-                                                                    MarkerId(
-                                                                        argument
-                                                                            .toString()));
-                                                              });
-                                                              Navigator.pop(
-                                                                  context);
-                                                            },
-                                                            child: Text(
-                                                              'Remove Marker',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .red),
-                                                            )),
-                                                        TextButton(
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context);
-                                                            },
-                                                            child: Text('OK'))
-                                                      ],
-                                                    ));
-                                          });
+                                          print(delete);
+                                          if (delete) {
+                                            print('delete');
+
+                                            setState(() {
+                                              _markers.removeWhere((element) =>
+                                                  element.markerId ==
+                                                  MarkerId(
+                                                      argument.toString()));
+                                              deleteDataFromDB(
+                                                  argument.toString());
+                                            });
+                                          }
                                           print('tapped');
                                         },
                                       ),
                                     );
+                                    addData(
+                                        argument.toString(),
+                                        argument.latitude.toString(),
+                                        argument.longitude.toString(),
+                                        _labelController.text);
                                   });
                                   Navigator.pop(context1);
                                 },
@@ -159,8 +244,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: Icon(Icons.location_searching),
+        onPressed: () {
+          setState(() {
+            delete = !delete;
+          });
+        },
+        child: Icon(
+          Icons.delete,
+          color: delete ? Colors.red : Colors.black,
+        ),
       ),
     );
   }
