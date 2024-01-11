@@ -1,16 +1,19 @@
-# map_marker_flutter
+# MapMarker
 
-A new Flutter project.
+<img width="300" alt="image" src="https://github.com/ash-100/map_marker/assets/77534181/2982a78e-dbd1-40e0-9f6f-43891e105abb">  
+  <img width="300" alt="image" src="https://github.com/ash-100/map_marker/assets/77534181/1671a001-2dc3-4d45-86b7-22acf39fbbd1">  
+  <img width="300" alt="image" src="https://github.com/ash-100/map_marker/assets/77534181/907d9187-cc2d-446f-a2a4-47af426e5080">
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+## Map Integration:
+Integrated a map view into the Flutter app and displayed a default map centered at a specific location with a zoom level that provides a clear view.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## User Interaction:
+App allows users to interact with the map, including panning and zooming. The users can add and remove markers to the map by tapping on it. Each marker has a lable as well. 
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Location Information:
+The app displays the latitude and longitude of the center of the map and update it as the map is panned or zoomed. The app also stores and displays information about each marker, including its latitude, longitude, and label.
+
+## Persistent Data:
+Implemented data persistence to save and retrieve marker information, so that markers are retained even when the app is closed and reopened.
