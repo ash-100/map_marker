@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:map_marker_flutter/model/marker_data.dart';
 import 'package:path/path.dart';
@@ -147,6 +148,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.portraitUp,
+    ]);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Column(
@@ -224,6 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         argument.longitude.toString(),
                                         _labelController.text);
                                   });
+                                  _labelController.text = "";
                                   Navigator.pop(context1);
                                 },
                                 child: Text('Add'))
@@ -249,9 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
             delete = !delete;
           });
         },
+        backgroundColor: delete ? Colors.red.shade300 : Colors.grey.shade300,
         child: Icon(
           Icons.delete,
-          color: delete ? Colors.red : Colors.black,
+          color: delete ? Colors.red.shade900 : Colors.black,
         ),
       ),
     );
